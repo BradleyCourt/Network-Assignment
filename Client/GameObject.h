@@ -31,11 +31,10 @@ public:
 
 	static glm::vec4 getColour(int id);
 	void updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client* c);
-	void Respawn();
 
 #ifndef NETWORK_SERVER
 	bool updateTranforms(float deltaTime, Client * client);
-
+	void Respawn(Client* client);
 #endif
 
 	void Read(RakNet::Packet* packet);

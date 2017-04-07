@@ -4,12 +4,15 @@
 #include "../bootstrap/Gizmos.h"
 #endif
 #include "Client.h"
+#include <time.h>
 #include <iostream>
+#include <chrono>
 
 GameObject::GameObject()
 {
 	health = 100;
 	currentHealth = health;
+	timer = 0.0f;
 }
 
 GameObject::~GameObject() {
@@ -35,7 +38,7 @@ void GameObject::updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client*
 {
 	if (currentHealth != health)
 	{
-		currentHealth = health;
+		//currentHealth = health;
 		std::cout << (currentHealth) << std::endl;
 	}
 	if (currentHealth <= 0 && !dead)
@@ -43,16 +46,15 @@ void GameObject::updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client*
 		//std::cout << "you are very dead" << std::endl;
 		dead = true;
 
+		std::cout << "I'm Dead \n";
+
 		RakNet::BitStream bs;
 		bs.Write((RakNet::MessageID) GameMessages::ID_CLIENT_PLAYER_DEAD);
 		bs.Write(m_myClientID);
 		pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
 		//c->quit();
 	}
-	if (dead == true)
-	{
-		Respawn();
-	}
+	
 
 }
 #ifndef NETWORK_SERVER
@@ -68,7 +70,7 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 		{
 			position.x += 1.0f * deltaTime;
 			rotation = 3;
-			health--;
+			currentHealth--;
 			changed = true;
 		}
 
@@ -92,25 +94,76 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 			rotation = 2;
 			changed = true;
 		}
+		
+	
+	}
+	if (dead == true)
+	{
+		
+
+		// if a second has elapsed since the last position change, do another one!
+		static float timeTillNextShuffle = 0;
+		timeTillNextShuffle -= deltaTime;
+
+		if (timeTillNextShuffle <= 0)
+		{
+			int value = (rand() % 4) + 1;
+			timeTillNextShuffle = 0.2f;
+
+			if (value == 1)
+			{
+				position.x = 5.0f;
+				position.z = 5.0f;
+				//	float respawn_Point_A = 9.0f;
+			}
+
+			if (value == 2)
+			{
+				position.x = -5.0f;
+				position.z = 5.0f;
+				//float respawn_Point_B = 9.0f;
+
+			}
+			if (value == 3)
+			{
+				position.x = 5.0f;
+				position.z = -5.0f;
+				//float respawn_Point_C = -9.0f;
+
+			}
+			if (value == 4)
+			{
+				position.x = -5.0f;
+				position.z = -5.0f;
+				//float respawn_Point_D = -9.0f;
+			}
+		}
+		Respawn(client);
 	
 	}
 	return changed;
 }
-#endif
-void GameObject::Respawn()
+
+void GameObject::Respawn(Client* client)
 {
-	timer = 0.0f;
 	if (dead == true)
 	{
 		timer++;
 	}
-	if (timer >= 3)
+	if (timer >= 100)
 	{
 		//respawn player
 		std::cout << "get respawned" << std::endl;
+		currentHealth = 100;
+		dead = false;
 		timer = 0.0f;
+		
+
+		// send a message to the server
+		client->sendClientGameObject();
 	}
 }
+#endif
 
 void GameObject::Read(RakNet::Packet * packet) // send
 {
@@ -121,7 +174,10 @@ void GameObject::Read(RakNet::Packet * packet) // send
 	bsIn.Read((char*)&position, sizeof(glm::vec3));
 	bsIn.Read((char*)&colour, sizeof(glm::vec4));
 	bsIn.Read((char*)&rotation, sizeof(int));
+	bsIn.Read((char*)&currentHealth, sizeof(int));
 
+	// set the dead state based on health?
+	dead = (currentHealth <= 0);
 }
 
 void GameObject::Write(RakNet::RakPeerInterface * pPeerInterface, const RakNet::SystemAddress & address, bool broadcast) //recieve
@@ -132,6 +188,7 @@ void GameObject::Write(RakNet::RakPeerInterface * pPeerInterface, const RakNet::
 	bs.Write((char*)&position, sizeof(glm::vec3));
 	bs.Write((char*)&colour, sizeof(glm::vec4));
 	bs.Write((char*)&rotation, sizeof(int));
+	bs.Write((char*)&currentHealth, sizeof(int));
 	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, broadcast);
 }
 

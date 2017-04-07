@@ -23,6 +23,7 @@ Client::~Client() {
 
 bool Client::startup() {
 
+	srand(time(nullptr));
 	setBackgroundColour(0.3141592653589792f, 0.49869563578934584379596f, 0.1943741f);
 
 
@@ -193,8 +194,8 @@ void Client::onReceivedClientDataPacket(RakNet::Packet * packet)
 		clientData.Read(packet);
 
 		// preserve any dead variables on our map
-		if (m_otherClientGameObjects.find(clientID) != m_otherClientGameObjects.end())
-			clientData.dead = m_otherClientGameObjects[clientID].dead;
+		//if (m_otherClientGameObjects.find(clientID) != m_otherClientGameObjects.end())
+		//	clientData.dead = m_otherClientGameObjects[clientID].dead;
 
 		m_otherClientGameObjects[clientID] = clientData;
 

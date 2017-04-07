@@ -23,6 +23,8 @@ public:
 	virtual void update(float deltaTime);
 	virtual void draw();
 
+	void sendClientGameObject();
+
 protected:
 
 	glm::mat4	m_viewMatrix;
@@ -43,7 +45,7 @@ protected:
 
 	void onSetClientIDPacket(RakNet::Packet * packet);
 
-	void sendClientGameObject();
+	
 
 	void onReceivedClientDataPacket(RakNet::Packet * packet);
 
