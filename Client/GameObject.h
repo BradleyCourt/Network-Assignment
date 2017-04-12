@@ -3,6 +3,8 @@
 #include <RakPeerInterface.h>
 #include <BitStream.h>
 #include "GameMessages.h"
+#include <list>
+
 
 class Client;
 
@@ -14,7 +16,10 @@ public:
 	int health;
 	int currentHealth;
 	bool dead = false;
+	bool isShooting;
 	int rotation;		//0 = up, 1 = right, 2 = down, 3 = left
+	int bullet;
+	
 
 	float timer;
 	float respawn_Point_A = 9.0f;
@@ -24,7 +29,9 @@ public:
 
 	glm::vec3 position;
 	glm::vec4 colour;
+	glm::vec3 velocity;
 
+	//std::list <int, GameObject> bullets;
 
 	GameObject();
 	virtual ~GameObject();

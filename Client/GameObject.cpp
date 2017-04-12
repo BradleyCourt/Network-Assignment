@@ -66,36 +66,65 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 	bool changed = false;
 	if (!dead && changed == false)
 	{
-		if (input->isKeyDown(aie::INPUT_KEY_LEFT))
+		if (input->isKeyDown(aie::INPUT_KEY_A))
 		{
 			position.x += 1.0f * deltaTime;
-			rotation = 3;
 			currentHealth--;
 			changed = true;
 		}
 
-		if (input->isKeyDown(aie::INPUT_KEY_RIGHT))
+		if (input->isKeyDown(aie::INPUT_KEY_D))
 		{
 			position.x -= 1.0f * deltaTime;
-			rotation = 1;
 			changed = true;
 		}
 
-		if (input->isKeyDown(aie::INPUT_KEY_UP))
+		if (input->isKeyDown(aie::INPUT_KEY_W))
 		{
 			position.z += 1.0f * deltaTime;
-			rotation = 0;
 			changed = true;
 		}
 
-		if (input->isKeyDown(aie::INPUT_KEY_DOWN))
+		if (input->isKeyDown(aie::INPUT_KEY_S))
 		{
-			position.z -= 1.0f * deltaTime;
-			rotation = 2;
+			
+			position.z -= 1.0f * deltaTime;		
 			changed = true;
 		}
 		
-	
+		if (input->isKeyDown(aie::INPUT_KEY_LEFT) && !isShooting)
+		{
+			isShooting = true;
+			aie::Gizmos::addSphere(glm::vec3(1, 0, 0), 1.0f, 32, 32, colour);
+			std::cout << "Bang\n";
+			rotation = 3;
+			changed = true;
+		}
+		if (input->isKeyDown(aie::INPUT_KEY_RIGHT) && !isShooting)
+		{
+			isShooting = true;
+			aie::Gizmos::addSphere(glm::vec3(-1, 0, 0), 1.0f, 32, 32, colour);
+			std::cout << "Bang\n";
+			rotation = 1;
+			changed = true;
+		}
+		if (input->isKeyDown(aie::INPUT_KEY_UP) && !isShooting)
+		{
+			isShooting = true;
+			aie::Gizmos::addSphere(glm::vec3(0, 0, 1), 1.0f, 32, 32, colour);
+			std::cout << "Bang\n";
+			rotation = 0;
+			changed = true;
+		}
+		if (input->isKeyDown(aie::INPUT_KEY_DOWN) && !isShooting)
+		{
+			isShooting = true;
+			aie::Gizmos::addSphere(glm::vec3(0,0,-1), 1.0f, 32, 32, colour);
+			std::cout << "Bang\n";
+			rotation = 2;
+			changed = true;
+		}
+		isShooting = false;
 	}
 	if (dead == true)
 	{
@@ -149,6 +178,7 @@ void GameObject::Respawn(Client* client)
 	if (dead == true)
 	{
 		timer++;
+
 	}
 	if (timer >= 100)
 	{
@@ -207,6 +237,7 @@ void GameObject::Draw()
 		// does not change the rotation of the sphere, edit transforms for that
 
 		aie::Gizmos::addLine(position, (position + (rotationDir)), glm::vec4(1));
+
 		//aie::Gizmos::addSphere(position, 0.5f, 64, 64, colour);
 	}
 	//else

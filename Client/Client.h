@@ -34,6 +34,7 @@ protected:
 	
 
 	std::unordered_map<int, GameObject> m_otherClientGameObjects;
+	
 
 	
 	RakNet::RakPeerInterface* m_pPeerInterface;
