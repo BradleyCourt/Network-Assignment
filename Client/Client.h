@@ -4,6 +4,7 @@
 #include "Application.h"
 #include <glm/glm.hpp>
 #include "GameObject.h"
+#include "Bullet.h"
 //struct GameObject
 //{
 //	glm::vec3 position;
@@ -23,6 +24,10 @@ public:
 	virtual void update(float deltaTime);
 	virtual void draw();
 
+//	std::unordered_map <int, Bullet> bullets;
+
+	RakNet::RakPeerInterface* m_pPeerInterface;
+
 	void sendClientGameObject();
 
 protected:
@@ -36,8 +41,7 @@ protected:
 	std::unordered_map<int, GameObject> m_otherClientGameObjects;
 	
 
-	
-	RakNet::RakPeerInterface* m_pPeerInterface;
+
 	const char* IP = "127.0.0.1";
 	const unsigned short PORT = 5456;
 

@@ -4,6 +4,7 @@
 #include <BitStream.h>
 #include "GameMessages.h"
 #include <list>
+#include <unordered_map>
 
 
 class Client;
@@ -16,11 +17,8 @@ public:
 	int health;
 	int currentHealth;
 	bool dead = false;
-	bool isShooting;
 	int rotation;		//0 = up, 1 = right, 2 = down, 3 = left
-	int bullet;
-	
-
+	bool isShooting;
 	float timer;
 	float respawn_Point_A = 9.0f;
 	float respawn_Point_B = 9.0f;
@@ -31,17 +29,20 @@ public:
 	glm::vec4 colour;
 	glm::vec3 velocity;
 
-	//std::list <int, GameObject> bullets;
-
+	static glm::vec3 directions[];
+	
 	GameObject();
 	virtual ~GameObject();
 
 	static glm::vec4 getColour(int id);
 	void updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client* c);
 
+	void Fire();
+
 #ifndef NETWORK_SERVER
 	bool updateTranforms(float deltaTime, Client * client);
 	void Respawn(Client* client);
+	void FireBullet(RakNet::RakPeerInterface* pPeerInterface, int id, int rotation);
 #endif
 
 	void Read(RakNet::Packet* packet);

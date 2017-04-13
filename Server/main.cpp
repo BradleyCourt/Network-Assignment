@@ -9,9 +9,11 @@
 #include "GameMessages.h"
 #include "GameObject.h"
 
+// player gameobjects
 std::map<int, GameObject> m_gameObjects;
 
 int nextClientID = 1;
+int nextBulletID = 100;
 
 void sendClientPing(RakNet::RakPeerInterface* pPeerInterface)
 {
@@ -58,6 +60,26 @@ void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAdd
 	bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_PLAYER_DEAD);
 	bs.Write(clientID);
 	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, true);
+}
+
+void OnBulletFired(RakNet::RakPeerInterface* pPeerInterface, RakNet::Packet* packet)
+{
+	RakNet::BitStream bs(packet->data, packet->length, false);
+	bs.IgnoreBytes(sizeof(RakNet::MessageID));
+	// read the packet and store in our list of game objects on the server
+	int clientID;
+	int rotation;
+	bs.Read(clientID);
+	bs.Read(rotation);
+
+	// now we can spawn a bullet!
+	m_gameObjects[nextBulletID].position = m_gameObjects[clientID].position;
+	m_gameObjects[nextBulletID].colour = m_gameObjects[clientID].colour;
+	m_gameObjects[nextBulletID].velocity = GameObject::directions[rotation];
+	m_gameObjects[nextBulletID].m_myClientID = nextBulletID;
+	m_gameObjects[nextBulletID].Write(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+
+	nextBulletID++;
 }
 
 int main()
@@ -127,6 +149,9 @@ int main()
 
 				break;
 			}
+			case ID_CLIENT_FIRE_BULLET:
+				OnBulletFired(pPeerInterface, packet);
+				break;
 			default:
 				std::cout << "Received a message with a unknown id: " << packet->data[0];
 				break;

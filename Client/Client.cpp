@@ -28,26 +28,26 @@ bool Client::startup() {
 
 
 
+	//bullets[1] = Bullet(m_otherClientGameObjects[1].position, m_otherClientGameObjects[1].position, m_otherClientGameObjects[1].colour);
+	// initialise gizmo primitive counts
+	Gizmos::create(10000, 10000, 10000, 10000);
 
-		// initialise gizmo primitive counts
-		Gizmos::create(10000, 10000, 10000, 10000);
+	m_myGameObject.position = glm::vec3(0, 0, 0);
+	m_myGameObject.colour = glm::vec4(1, 0, 0, 1);
 
-		m_myGameObject.position = glm::vec3(0, 0, 0);
-		m_myGameObject.colour = glm::vec4(1, 0, 0, 1);
+	// create simple camera transforms
 
-		// create simple camera transforms
-
-		m_viewMatrix = glm::lookAt(vec3(0, 10, 0), vec3(0), vec3(0, 0, -1));
-
-
-
-		m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f,
-			getWindowWidth() / (float)getWindowHeight(),
-			0.1f, 1000.f);
-		handleNetworkConnection();
+	m_viewMatrix = glm::lookAt(vec3(0, 10, 0), vec3(0), vec3(0, 0, -1));
 
 
-		return true;
+
+	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f,
+		getWindowWidth() / (float)getWindowHeight(),
+		0.1f, 1000.f);
+	handleNetworkConnection();
+
+
+	return true;
 }
 
 void Client::shutdown() {
@@ -86,6 +86,11 @@ void Client::update(float deltaTime) {
 		quit();
 	}
 
+
+	for (auto& otherClient : m_otherClientGameObjects)
+	{
+		otherClient.second.position += otherClient.second.velocity * deltaTime;
+	}
 
 	if (m_myGameObject.updateTranforms(deltaTime, this))
 	{
@@ -202,7 +207,7 @@ void Client::onReceivedClientDataPacket(RakNet::Packet * packet)
 		//For now, just output the Game Object information to the console
 
 		std::cout << "Client" << clientID << " at : " << clientData.position.x << " " << clientData.position.z << std::endl;
-			
+
 	}
 }
 
@@ -251,7 +256,7 @@ void Client::handleNetworkMessages()
 					ob->dead = true;
 			}
 		}
-			break;
+		break;
 		case ID_SERVER_SET_CLIENT_ID:
 			onSetClientIDPacket(packet);
 			break;

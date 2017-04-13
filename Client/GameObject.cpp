@@ -8,11 +8,21 @@
 #include <iostream>
 #include <chrono>
 
+glm::vec3 GameObject::directions[] = {
+	glm::vec3(0, 0, 10),
+	glm::vec3(-10, 0, 0),
+	glm::vec3(0, 0, -10),
+	glm::vec3(10, 0, 0)
+};
+
 GameObject::GameObject()
 {
 	health = 100;
 	currentHealth = health;
 	timer = 0.0f;
+	rotation = 0;
+
+
 }
 
 GameObject::~GameObject() {
@@ -54,7 +64,13 @@ void GameObject::updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client*
 		pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
 		//c->quit();
 	}
-	
+
+
+}
+
+void GameObject::Fire()
+{
+
 
 }
 #ifndef NETWORK_SERVER
@@ -63,13 +79,21 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 {
 	aie::Input* input = aie::Input::getInstance();
 
+	static float timeTillNextShot = 0;
+	timeTillNextShot -= deltaTime;
+
+	//if (m_myClientID >= 100)
+	//{
+	//	position += velocity * deltaTime;
+	//}
+
 	bool changed = false;
 	if (!dead && changed == false)
 	{
 		if (input->isKeyDown(aie::INPUT_KEY_A))
 		{
 			position.x += 1.0f * deltaTime;
-			currentHealth--;
+		//	currentHealth--;
 			changed = true;
 		}
 
@@ -87,48 +111,62 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 
 		if (input->isKeyDown(aie::INPUT_KEY_S))
 		{
-			
-			position.z -= 1.0f * deltaTime;		
+
+			position.z -= 1.0f * deltaTime;
 			changed = true;
 		}
-		
-		if (input->isKeyDown(aie::INPUT_KEY_LEFT) && !isShooting)
+
+		rotation = -1;
+
+		if (input->isKeyDown(aie::INPUT_KEY_LEFT) && !isShooting && timeTillNextShot <= 0)
 		{
 			isShooting = true;
-			aie::Gizmos::addSphere(glm::vec3(1, 0, 0), 1.0f, 32, 32, colour);
+			//aie::Gizmos::addSphere(glm::vec3(1, 0, 0), 1.0f, 32, 32, colour);
 			std::cout << "Bang\n";
 			rotation = 3;
+			timeTillNextShot = 0.8f;
 			changed = true;
 		}
-		if (input->isKeyDown(aie::INPUT_KEY_RIGHT) && !isShooting)
+		if (input->isKeyDown(aie::INPUT_KEY_RIGHT) && !isShooting && timeTillNextShot <= 0)
 		{
 			isShooting = true;
-			aie::Gizmos::addSphere(glm::vec3(-1, 0, 0), 1.0f, 32, 32, colour);
+			//aie::Gizmos::addSphere(glm::vec3(-1, 0, 0), 1.0f, 32, 32, colour);
 			std::cout << "Bang\n";
 			rotation = 1;
+			timeTillNextShot = 0.8f;
 			changed = true;
 		}
-		if (input->isKeyDown(aie::INPUT_KEY_UP) && !isShooting)
+		if (input->isKeyDown(aie::INPUT_KEY_UP) && !isShooting && timeTillNextShot <= 0)
 		{
 			isShooting = true;
-			aie::Gizmos::addSphere(glm::vec3(0, 0, 1), 1.0f, 32, 32, colour);
+			//aie::Gizmos::addSphere(glm::vec3(0, 0, 1), 1.0f, 32, 32, colour);
 			std::cout << "Bang\n";
 			rotation = 0;
+			timeTillNextShot = 0.8f;
 			changed = true;
 		}
-		if (input->isKeyDown(aie::INPUT_KEY_DOWN) && !isShooting)
+		if (input->isKeyDown(aie::INPUT_KEY_DOWN) && !isShooting && timeTillNextShot <= 0)
 		{
 			isShooting = true;
-			aie::Gizmos::addSphere(glm::vec3(0,0,-1), 1.0f, 32, 32, colour);
+			//aie::Gizmos::addSphere(glm::vec3(0, 0, -1), 1.0f, 32, 32, colour);
 			std::cout << "Bang\n";
 			rotation = 2;
+			timeTillNextShot = 0.8f;
 			changed = true;
 		}
+
+		// we'vew fired a shot
+		if (rotation != -1)
+		{
+			// send a message to the server listing the shooitng player's ID and the direction they were firing in
+			FireBullet(client->m_pPeerInterface, m_myClientID, rotation);
+		}
+
 		isShooting = false;
 	}
 	if (dead == true)
 	{
-		
+
 
 		// if a second has elapsed since the last position change, do another one!
 		static float timeTillNextShuffle = 0;
@@ -168,7 +206,7 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 			}
 		}
 		Respawn(client);
-	
+
 	}
 	return changed;
 }
@@ -187,12 +225,22 @@ void GameObject::Respawn(Client* client)
 		currentHealth = 100;
 		dead = false;
 		timer = 0.0f;
-		
+
 
 		// send a message to the server
 		client->sendClientGameObject();
 	}
 }
+
+void GameObject::FireBullet(RakNet::RakPeerInterface* pPeerInterface, int id, int rotation)
+{
+	RakNet::BitStream bs;
+	bs.Write((RakNet::MessageID) GameMessages::ID_CLIENT_FIRE_BULLET);
+	bs.Write(id);
+	bs.Write(rotation);
+	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+}
+
 #endif
 
 void GameObject::Read(RakNet::Packet * packet) // send
@@ -203,6 +251,7 @@ void GameObject::Read(RakNet::Packet * packet) // send
 	bsIn.Read(m_myClientID);
 	bsIn.Read((char*)&position, sizeof(glm::vec3));
 	bsIn.Read((char*)&colour, sizeof(glm::vec4));
+	bsIn.Read((char*)&velocity, sizeof(glm::vec3));
 	bsIn.Read((char*)&rotation, sizeof(int));
 	bsIn.Read((char*)&currentHealth, sizeof(int));
 
@@ -217,6 +266,7 @@ void GameObject::Write(RakNet::RakPeerInterface * pPeerInterface, const RakNet::
 	bs.Write(m_myClientID);
 	bs.Write((char*)&position, sizeof(glm::vec3));
 	bs.Write((char*)&colour, sizeof(glm::vec4));
+	bs.Write((char*)&velocity, sizeof(glm::vec3));;
 	bs.Write((char*)&rotation, sizeof(int));
 	bs.Write((char*)&currentHealth, sizeof(int));
 	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, broadcast);
@@ -227,17 +277,20 @@ void GameObject::Draw()
 {
 	if (!dead)
 	{
-		aie::Gizmos::addSphere(position, 1.0f, 32, 32, colour);
+		// if its a bullet make it small!
+		float radius = m_myClientID >= 100 ? 0.1f : 1.0f;
+		if (m_myClientID < 100)
+		{
+			aie::Gizmos::addSphere(position, 1.0f, 16, 16, colour);
 
-		glm::vec3 rotationDir = glm::vec3(0);
-		if (rotation == 0) { rotationDir = glm::vec3(0, 0, 10); };
-		if (rotation == 1) { rotationDir = glm::vec3(-10, 0, 0); };
-		if (rotation == 2) { rotationDir = glm::vec3(0, 0, -10); };
-		if (rotation == 3) { rotationDir = glm::vec3(10, 0, 0); };
-		// does not change the rotation of the sphere, edit transforms for that
 
-		aie::Gizmos::addLine(position, (position + (rotationDir)), glm::vec4(1));
+			glm::vec3 rotationDir = directions[rotation];
+			// does not change the rotation of the sphere, edit transforms for that
 
+			aie::Gizmos::addLine(position, (position + (rotationDir)), glm::vec4(1));
+		}
+		else
+			aie::Gizmos::addSphere(position, 0.2f, 4, 4, colour);
 		//aie::Gizmos::addSphere(position, 0.5f, 64, 64, colour);
 	}
 	//else
