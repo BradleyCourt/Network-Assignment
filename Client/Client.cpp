@@ -55,9 +55,9 @@ void Client::shutdown() {
 	Gizmos::destroy();
 }
 
-void Client::update(float deltaTime) {
-
-
+void Client::update(float deltaTime)
+{
+	
 
 	// query time since application started
 	float time = getTime();
@@ -97,27 +97,15 @@ void Client::update(float deltaTime) {
 		sendClientGameObject();
 	}
 	m_viewMatrix = glm::lookAt(m_myGameObject.position + vec3(0, 20, 0), m_myGameObject.position, vec3(0, 0, 1));
+
 	//Gizmos::addSphere(m_myGameObject.position, 1.0f, 32, 32, m_myGameObject.colour);
-	if (m_myGameObject.position.z > level_Height) // +Z
-	{
-		m_myGameObject.position.z = level_Height;
-	}
-	if (m_myGameObject.position.x > level_Width) // +X
-	{
-		m_myGameObject.position.x = level_Width;
-	}
-	if (m_myGameObject.position.z < level_Bottom) // -Z
-	{
-		m_myGameObject.position.z = level_Bottom;
-	}
-	if (m_myGameObject.position.x < level_Right) // -X
-	{
-		m_myGameObject.position.x = level_Right;
-	}
 
 }
 
-void Client::draw() {
+
+
+void Client::draw() 
+{
 
 	// wipe the screen to the background colour
 	clearScreen();
@@ -281,6 +269,8 @@ void Client::handleNetworkMessages()
 	}
 
 }
+
+
 
 
 

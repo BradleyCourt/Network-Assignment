@@ -44,6 +44,47 @@ glm::vec4 GameObject::getColour(int id)
 	return colours[(id - 1) & 7];
 }
 
+void GameObject::snapToBounds(glm::vec3& pos)
+{
+	if (pos.z > level_Height) // +Z
+	{
+		pos.z = level_Height;
+	}
+	if (pos.x > level_Width) // +X
+	{
+		pos.x = level_Width;
+	}
+	if (pos.z < level_Bottom) // -Z
+	{
+		pos.z = level_Bottom;
+	}
+	if (pos.x < level_Right) // -X
+	{
+		pos.x = level_Right;
+	}
+}
+
+bool GameObject::isOutOfBounds(glm::vec3& pos)
+{
+	if (pos.z > level_Height) // +Z
+	{
+		return true;
+	}
+	if (pos.x > level_Width) // +X
+	{
+		return true;
+	}
+	if (pos.z < level_Bottom) // -Z
+	{
+		return true; 
+	}
+	if (pos.x < level_Right) // -X
+	{
+		return true;
+	}
+	return false;
+}
+
 void GameObject::updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client* c)
 {
 	if (currentHealth != health)
@@ -92,27 +133,31 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 	{
 		if (input->isKeyDown(aie::INPUT_KEY_A))
 		{
-			position.x += 1.0f * deltaTime;
+			position.x += 5.0f * deltaTime;
+			snapToBounds(this->position);
 		//	currentHealth--;
 			changed = true;
 		}
 
 		if (input->isKeyDown(aie::INPUT_KEY_D))
 		{
-			position.x -= 1.0f * deltaTime;
+			position.x -= 5.0f * deltaTime;
+			snapToBounds(this->position);
 			changed = true;
 		}
 
 		if (input->isKeyDown(aie::INPUT_KEY_W))
 		{
-			position.z += 1.0f * deltaTime;
+			position.z += 5.0f * deltaTime;
+			snapToBounds(this->position);
 			changed = true;
 		}
 
 		if (input->isKeyDown(aie::INPUT_KEY_S))
 		{
 
-			position.z -= 1.0f * deltaTime;
+			position.z -= 5.0f * deltaTime;
+			snapToBounds(this->position);
 			changed = true;
 		}
 
@@ -135,6 +180,7 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 			rotation = 1;
 			timeTillNextShot = 0.8f;
 			changed = true;
+			
 		}
 		if (input->isKeyDown(aie::INPUT_KEY_UP) && !isShooting && timeTillNextShot <= 0)
 		{
@@ -155,7 +201,7 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 			changed = true;
 		}
 
-		// we'vew fired a shot
+		// we've fired a shot
 		if (rotation != -1)
 		{
 			// send a message to the server listing the shooitng player's ID and the direction they were firing in
@@ -277,13 +323,13 @@ void GameObject::Draw()
 {
 	if (!dead)
 	{
+
 		// if its a bullet make it small!
 		float radius = m_myClientID >= 100 ? 0.1f : 1.0f;
 		if (m_myClientID < 100)
 		{
 			aie::Gizmos::addSphere(position, 1.0f, 16, 16, colour);
-
-
+			
 			glm::vec3 rotationDir = directions[rotation];
 			// does not change the rotation of the sphere, edit transforms for that
 

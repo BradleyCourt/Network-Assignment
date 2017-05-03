@@ -54,7 +54,7 @@ void sendNewClientID(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAdd
 	m_gameObjects[id] = obj;
 }
 
-void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress& address, int clientID)
+void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress address, int clientID)
 {
 	RakNet::BitStream bs;
 	bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_PLAYER_DEAD);

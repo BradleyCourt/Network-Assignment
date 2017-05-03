@@ -17,5 +17,9 @@ public:
 	Bullet(glm::vec3 pos, glm::vec3 v, glm::vec4 c);
 	~Bullet();
 	void Fire();
+
+#ifdef NETWORK_SERVER
+	void Update(RakNet::RakPeerInterface* pPeerInterface);
+#endif
 };
 

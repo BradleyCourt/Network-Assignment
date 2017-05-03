@@ -25,6 +25,14 @@ public:
 	float respawn_Point_C = -9.0f;
 	float respawn_Point_D = -9.0f;
 
+	void snapToBounds(glm::vec3& pos);
+	bool isOutOfBounds(glm::vec3& pos);
+
+	float level_Height = 10.0f;
+	float level_Width = 10.0f;
+	float level_Bottom = -10.0f;
+	float level_Right = -10.0f;
+
 	glm::vec3 position;
 	glm::vec4 colour;
 	glm::vec3 velocity;

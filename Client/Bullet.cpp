@@ -25,3 +25,15 @@ void Bullet::Fire()
 
 	
 }
+
+#ifdef NETWORK_SERVER
+void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress address, int clientID);
+
+void Bullet::Update(RakNet::RakPeerInterface* pPeerInterface)
+{
+	if (isOutOfBounds(position))
+	{
+		sendClientDeath(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, this->m_myClientID);
+	}
+}
+#endif

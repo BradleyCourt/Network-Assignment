@@ -56,10 +56,7 @@ protected:
 
 	void handleNetworkMessages();
 
-	float level_Height = 10.0f;
-	float level_Width = 10.0f;
-	float level_Bottom = -10.0f;
-	float level_Right = -10.0f;
+
 
 
 	
