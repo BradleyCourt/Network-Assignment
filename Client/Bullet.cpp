@@ -31,6 +31,11 @@ void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAdd
 
 void Bullet::Update(RakNet::RakPeerInterface* pPeerInterface)
 {
+	for (auto& otherClient : m_otherClientGameObjects)
+	{
+		otherClient.second.position += otherClient.second.velocity * deltaTime;
+	}
+	// check collisions
 	if (isOutOfBounds(position))
 	{
 		sendClientDeath(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, this->m_myClientID);

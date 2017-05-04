@@ -30,6 +30,17 @@ void sendClientPing(RakNet::RakPeerInterface* pPeerInterface)
 	}
 }
 
+
+void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
+{
+	while (true)
+	{
+		// foreach bullet, call update
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+	}
+}
+
 void sendNewClientID(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress& address)
 {
 	RakNet::BitStream bs;
@@ -101,6 +112,7 @@ int main()
 	pPeerInterface->SetMaximumIncomingConnections(32);
 
 	std::thread pingThread(sendClientPing, pPeerInterface);
+	std::thread updateThread(updateObjects, pPeerInterface);
 
 	RakNet::Packet* packet = nullptr;
 	while (true)
@@ -149,6 +161,7 @@ int main()
 
 				break;
 			}
+			
 			case ID_CLIENT_FIRE_BULLET:
 				OnBulletFired(pPeerInterface, packet);
 				break;
