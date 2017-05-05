@@ -51,10 +51,16 @@ public:
 	bool updateTranforms(float deltaTime, Client * client);
 	void Respawn(Client* client);
 	void FireBullet(RakNet::RakPeerInterface* pPeerInterface, int id, int rotation);
+#else
+	virtual void Update(RakNet::RakPeerInterface* pPeerInterface, float deltaTime);
 #endif
+
+	bool isBullet() { return m_myClientID >= 100; }
 
 	void Read(RakNet::Packet* packet);
 	void Write(RakNet::RakPeerInterface* pPeerInterface, const RakNet::SystemAddress& address, bool broadcast);
+
+	float radius = 1.0f;
 
 	void Draw();
 };

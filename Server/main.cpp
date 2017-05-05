@@ -38,6 +38,41 @@ void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
 		// foreach bullet, call update
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+		for (auto& object : m_gameObjects)
+		{
+			object.second.Update(pPeerInterface, 0.1f);
+			if (object.second.isBullet())
+			{
+				std::cout << object.second.m_myClientID << ":(" << object.second.position.x << "." << object.second.position.z << ")" << std::endl;
+			}
+		}
+
+		// Check collisions
+		for (auto& object : m_gameObjects)
+		{
+			for (auto& other : m_gameObjects)
+			{
+				//Do not collide with self
+				if (object.first == other.first)
+					continue;
+
+				// Bullets dont collide together
+				if ((object.second.isBullet()) == (other.second.isBullet()))
+					continue;
+
+				//Check collision between object and other
+				float collisionDistance = object.second.radius + other.second.radius;
+
+				float distance = glm::distance(object.second.position, other.second.position);
+
+				if (distance <= collisionDistance)
+				{
+					//THEY HAVE COLLIDED
+					std::cout << "BOOM";
+				}
+			}
+		}
+
 	}
 }
 
@@ -70,6 +105,8 @@ void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAdd
 	RakNet::BitStream bs;
 	bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_PLAYER_DEAD);
 	bs.Write(clientID);
+	// TODO: Delete the object here.
+	// TODO: Remove this gameobject from the map stored in client and server
 	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, true);
 }
 

@@ -19,7 +19,7 @@ public:
 	void Fire();
 
 #ifdef NETWORK_SERVER
-	void Update(RakNet::RakPeerInterface* pPeerInterface);
+	virtual void Update(RakNet::RakPeerInterface* pPeerInterface);
 #endif
 };
 

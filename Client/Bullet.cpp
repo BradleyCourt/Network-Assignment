@@ -22,23 +22,8 @@ Bullet::~Bullet()
 void Bullet::Fire()
 {
 	//aie::Input* input = aie::Input::getInstance();
-
+	
 	
 }
 
-#ifdef NETWORK_SERVER
-void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress address, int clientID);
 
-void Bullet::Update(RakNet::RakPeerInterface* pPeerInterface)
-{
-	for (auto& otherClient : m_otherClientGameObjects)
-	{
-		otherClient.second.position += otherClient.second.velocity * deltaTime;
-	}
-	// check collisions
-	if (isOutOfBounds(position))
-	{
-		sendClientDeath(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, this->m_myClientID);
-	}
-}
-#endif

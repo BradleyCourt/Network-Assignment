@@ -94,16 +94,20 @@ void GameObject::updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client*
 	}
 	if (currentHealth <= 0 && !dead)
 	{
-		//std::cout << "you are very dead" << std::endl;
-		dead = true;
+		if (!isBullet())
+		{
+			//std::cout << "you are very dead" << std::endl;
+			dead = true;
 
-		std::cout << "I'm Dead \n";
+			std::cout << "I'm Dead \n";
 
-		RakNet::BitStream bs;
-		bs.Write((RakNet::MessageID) GameMessages::ID_CLIENT_PLAYER_DEAD);
-		bs.Write(m_myClientID);
-		pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
-		//c->quit();
+			RakNet::BitStream bs;
+			bs.Write((RakNet::MessageID) GameMessages::ID_CLIENT_PLAYER_DEAD);
+			bs.Write(m_myClientID);
+			pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+			//c->quit();
+		}
+	
 	}
 
 
@@ -210,7 +214,7 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 
 		isShooting = false;
 	}
-	if (dead == true)
+	if (dead == true && !isBullet())
 	{
 
 
@@ -259,7 +263,7 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 
 void GameObject::Respawn(Client* client)
 {
-	if (dead == true)
+	if (dead == true && !isBullet())
 	{
 		timer++;
 
@@ -323,12 +327,14 @@ void GameObject::Draw()
 {
 	if (!dead)
 	{
+	
 
 		// if its a bullet make it small!
 		float radius = m_myClientID >= 100 ? 0.1f : 1.0f;
 		if (m_myClientID < 100)
 		{
-			aie::Gizmos::addSphere(position, 1.0f, 16, 16, colour);
+			radius = 1.0f;
+			aie::Gizmos::addSphere(position, radius, 16, 16, colour);
 			
 			glm::vec3 rotationDir = directions[rotation];
 			// does not change the rotation of the sphere, edit transforms for that
@@ -336,7 +342,10 @@ void GameObject::Draw()
 			aie::Gizmos::addLine(position, (position + (rotationDir)), glm::vec4(1));
 		}
 		else
-			aie::Gizmos::addSphere(position, 0.2f, 4, 4, colour);
+		{
+			radius = 0.2f;
+			aie::Gizmos::addSphere(position, radius, 4, 4, colour);
+		}
 		//aie::Gizmos::addSphere(position, 0.5f, 64, 64, colour);
 	}
 	//else
@@ -344,5 +353,23 @@ void GameObject::Draw()
 	//	Respawn();
 	//}
 
+}
+#endif
+
+#ifdef NETWORK_SERVER
+void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress address, int clientID);
+
+void GameObject::Update(RakNet::RakPeerInterface* pPeerInterface, float deltaTime)
+{
+	if (!isBullet())
+		return;
+
+	position += velocity * deltaTime;
+
+	// check collisions
+	if (isOutOfBounds(position))
+	{
+		sendClientDeath(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, this->m_myClientID);
+	}
 }
 #endif
