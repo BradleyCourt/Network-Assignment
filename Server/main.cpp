@@ -12,6 +12,9 @@
 // player gameobjects
 std::map<int, GameObject> m_gameObjects;
 
+// gameObjects to be deleted
+std::list<int> deathRow;
+
 int nextClientID = 1;
 int nextBulletID = 100;
 
@@ -38,6 +41,8 @@ void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
 		// foreach bullet, call update
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+		deathRow.clear();
+
 		for (auto& object : m_gameObjects)
 		{
 			object.second.Update(pPeerInterface, 0.1f);
@@ -46,6 +51,9 @@ void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
 				std::cout << object.second.m_myClientID << ":(" << object.second.position.x << "." << object.second.position.z << ")" << std::endl;
 			}
 		}
+
+		for (int id : deathRow)
+			m_gameObjects.erase(id);
 
 		// Check collisions
 		for (auto& object : m_gameObjects)
@@ -69,6 +77,8 @@ void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
 				{
 					//THEY HAVE COLLIDED
 					std::cout << "BOOM";
+					//deathRow.push_back(clientID);
+					
 				}
 			}
 		}
@@ -100,13 +110,17 @@ void sendNewClientID(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAdd
 	m_gameObjects[id] = obj;
 }
 
+
 void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress address, int clientID)
 {
 	RakNet::BitStream bs;
 	bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_PLAYER_DEAD);
 	bs.Write(clientID);
-	// TODO: Delete the object here.
-	// TODO: Remove this gameobject from the map stored in client and server
+	if (clientID >= 100)
+	{
+		deathRow.push_back(clientID);
+	}
+	
 	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, true);
 }
 
@@ -195,6 +209,23 @@ int main()
 
 				// Echo death message to all clients
 				sendClientDeath(pPeerInterface, packet->systemAddress, deadClient);
+
+				break;
+			}
+			case ID_SERVER_BULLET_DEL:
+			{
+				RakNet::BitStream bs(packet->data, packet->length, false);
+				//pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
+
+				bs.IgnoreBytes(sizeof(RakNet::MessageID));
+				// read the packet and store in our list of game objects on the server
+				int deadBullet;
+				bs.Read(deadBullet);
+				m_gameObjects[deadBullet].dead = true;
+				std::cout << "RIP to client#: " << deadBullet << std::endl;
+
+				// Echo death message to all clients
+				sendClientDeath(pPeerInterface, packet->systemAddress, deadBullet);
 
 				break;
 			}
