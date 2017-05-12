@@ -94,7 +94,7 @@ void GameObject::updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client*
 	}
 	if (currentHealth <= 0 && !dead)
 	{
-		if (!isBullet())
+	if (!isBullet())
 		{
 			//std::cout << "you are very dead" << std::endl;
 			dead = true;
@@ -102,10 +102,14 @@ void GameObject::updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client*
 			std::cout << "I'm Dead \n";
 
 			RakNet::BitStream bs;
-			bs.Write((RakNet::MessageID) GameMessages::ID_CLIENT_PLAYER_DEAD);
+			bs.Write((RakNet::MessageID) GameMessages::ID_SERVER_PLAYER_DEAD);
 			bs.Write(m_myClientID);
 			pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
-			//c->quit();
+		}
+		else if(isBullet())//todo
+		{
+			currentHealth -= 10;
+			std::cout << m_myClientID << "	I TOOK DAMAGE	" << std::endl;
 		}
 	
 	}
@@ -303,8 +307,10 @@ void GameObject::Read(RakNet::Packet * packet) // send
 	bsIn.Read((char*)&colour, sizeof(glm::vec4));
 	bsIn.Read((char*)&velocity, sizeof(glm::vec3));
 	bsIn.Read((char*)&rotation, sizeof(int));
+	bsIn.Read((char*)&health, sizeof(int));
 	bsIn.Read((char*)&currentHealth, sizeof(int));
 
+	std::cout << "Obj#" << m_myClientID << " HP= " << currentHealth << std::endl;
 	// set the dead state based on health?
 	dead = (currentHealth <= 0);
 }
@@ -318,6 +324,7 @@ void GameObject::Write(RakNet::RakPeerInterface * pPeerInterface, const RakNet::
 	bs.Write((char*)&colour, sizeof(glm::vec4));
 	bs.Write((char*)&velocity, sizeof(glm::vec3));;
 	bs.Write((char*)&rotation, sizeof(int));
+	bs.Write((char*)&health, sizeof(int));
 	bs.Write((char*)&currentHealth, sizeof(int));
 	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, broadcast);
 }
@@ -362,7 +369,13 @@ void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAdd
 void GameObject::Update(RakNet::RakPeerInterface* pPeerInterface, float deltaTime)
 {
 	if (!isBullet())
+	{
+		/*if (currentHealth <= 0)
+		{
+			sendClientDeath(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, this->m_myClientID);
+		}*/
 		return;
+	}
 
 	position += velocity * deltaTime;
 

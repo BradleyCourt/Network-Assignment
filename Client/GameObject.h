@@ -13,6 +13,7 @@ class GameObject
 {
 public:
 
+	int m_parentID = -1;
 	int m_myClientID;
 	int health;
 	int currentHealth;

@@ -15,24 +15,38 @@ std::map<int, GameObject> m_gameObjects;
 // gameObjects to be deleted
 std::list<int> deathRow;
 
+
 int nextClientID = 1;
 int nextBulletID = 100;
 
-void sendClientPing(RakNet::RakPeerInterface* pPeerInterface)
+//void sendClientPing(RakNet::RakPeerInterface* pPeerInterface)
+//{
+//	while (true)
+//	{
+//		RakNet::BitStream bs;
+//		bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_TEXT_MESSAGE);
+//		bs.Write("Ping!");
+//
+//		pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0,
+//			RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+//		std::this_thread::sleep_for(std::chrono::seconds(1));
+//		
+//	}
+//}
+
+
+void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress address, int clientID)
 {
-	while (true)
+	RakNet::BitStream bs;
+	bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_PLAYER_DEAD);
+	bs.Write(clientID);
+	if (clientID >= 100)
 	{
-		RakNet::BitStream bs;
-		bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_TEXT_MESSAGE);
-		bs.Write("Ping!");
-
-		pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0,
-			RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-		
+		deathRow.push_back(clientID);
 	}
-}
 
+	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, true);
+}
 
 void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
 {
@@ -41,19 +55,14 @@ void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
 		// foreach bullet, call update
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-		deathRow.clear();
-
 		for (auto& object : m_gameObjects)
 		{
 			object.second.Update(pPeerInterface, 0.1f);
-			if (object.second.isBullet())
-			{
-				std::cout << object.second.m_myClientID << ":(" << object.second.position.x << "." << object.second.position.z << ")" << std::endl;
-			}
+			//if (object.second.isBullet())
+			//{
+			//	std::cout << object.second.m_myClientID << ":(" << object.second.position.x << "." << object.second.position.z << ")" << std::endl;
+			//}
 		}
-
-		for (int id : deathRow)
-			m_gameObjects.erase(id);
 
 		// Check collisions
 		for (auto& object : m_gameObjects)
@@ -64,24 +73,48 @@ void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
 				if (object.first == other.first)
 					continue;
 
+				GameObject& object1 = object.second;
+				GameObject& object2 = other.second;
+
+				// dont collide with our own bullets
+				if (object1.m_parentID == object2.m_myClientID ||  object1.m_myClientID == object2.m_parentID)
+					continue;
+
 				// Bullets dont collide together
-				if ((object.second.isBullet()) == (other.second.isBullet()))
+				if ((object1.isBullet()) == (object2.isBullet()))
 					continue;
 
 				//Check collision between object and other
-				float collisionDistance = object.second.radius + other.second.radius;
+				float collisionDistance = object1.radius + object2.radius;
 
-				float distance = glm::distance(object.second.position, other.second.position);
+				float distance = glm::distance(object1.position, object2.position);
 
 				if (distance <= collisionDistance)
 				{
+
 					//THEY HAVE COLLIDED
 					std::cout << "BOOM";
-					//deathRow.push_back(clientID);
+					// destroy the bullet and damage the player
+					if (object.second.isBullet())
+					{
+						sendClientDeath(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, object1.m_myClientID);
+						object2.currentHealth -= 100;
+						object2.Write(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+
+					}
+					else
+					{
+						sendClientDeath(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, object2.m_myClientID);
+						object1.currentHealth -= 100;
+						object1.Write(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+					}
 					
 				}
 			}
 		}
+		for (int id : deathRow)
+			m_gameObjects.erase(id);
+		deathRow.clear();
 
 	}
 }
@@ -111,18 +144,6 @@ void sendNewClientID(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAdd
 }
 
 
-void sendClientDeath(RakNet::RakPeerInterface* pPeerInterface, RakNet::SystemAddress address, int clientID)
-{
-	RakNet::BitStream bs;
-	bs.Write((RakNet::MessageID)GameMessages::ID_SERVER_PLAYER_DEAD);
-	bs.Write(clientID);
-	if (clientID >= 100)
-	{
-		deathRow.push_back(clientID);
-	}
-	
-	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, true);
-}
 
 void OnBulletFired(RakNet::RakPeerInterface* pPeerInterface, RakNet::Packet* packet)
 {
@@ -139,10 +160,12 @@ void OnBulletFired(RakNet::RakPeerInterface* pPeerInterface, RakNet::Packet* pac
 	m_gameObjects[nextBulletID].colour = m_gameObjects[clientID].colour;
 	m_gameObjects[nextBulletID].velocity = GameObject::directions[rotation];
 	m_gameObjects[nextBulletID].m_myClientID = nextBulletID;
+	m_gameObjects[nextBulletID].m_parentID = clientID; // server only information
 	m_gameObjects[nextBulletID].Write(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
 
 	nextBulletID++;
 }
+
 
 int main()
 {
@@ -162,7 +185,7 @@ int main()
 	pPeerInterface->Startup(32, &sd, 1);
 	pPeerInterface->SetMaximumIncomingConnections(32);
 
-	std::thread pingThread(sendClientPing, pPeerInterface);
+	//std::thread pingThread(sendClientPing, pPeerInterface);
 	std::thread updateThread(updateObjects, pPeerInterface);
 
 	RakNet::Packet* packet = nullptr;
@@ -212,24 +235,6 @@ int main()
 
 				break;
 			}
-			case ID_SERVER_BULLET_DEL:
-			{
-				RakNet::BitStream bs(packet->data, packet->length, false);
-				//pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
-
-				bs.IgnoreBytes(sizeof(RakNet::MessageID));
-				// read the packet and store in our list of game objects on the server
-				int deadBullet;
-				bs.Read(deadBullet);
-				m_gameObjects[deadBullet].dead = true;
-				std::cout << "RIP to client#: " << deadBullet << std::endl;
-
-				// Echo death message to all clients
-				sendClientDeath(pPeerInterface, packet->systemAddress, deadBullet);
-
-				break;
-			}
-			
 			case ID_CLIENT_FIRE_BULLET:
 				OnBulletFired(pPeerInterface, packet);
 				break;

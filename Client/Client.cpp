@@ -194,7 +194,8 @@ void Client::onReceivedClientDataPacket(RakNet::Packet * packet)
 
 		//For now, just output the Game Object information to the console
 
-		std::cout << "Client" << clientID << " at : " << clientData.position.x << " " << clientData.position.z << std::endl;
+		// Prints clients location
+		//std::cout << "Client" << clientID << " at : " << clientData.position.x << " " << clientData.position.z << std::endl;
 
 	}
 }
@@ -231,7 +232,16 @@ void Client::handleNetworkMessages()
 			break;
 		case ID_SERVER_PLAYER_DEAD:
 		{
-			std::cout << "A player has died\n";
+			//if (m_myGameObject.m_myClientID >= 100)
+			//{
+			//	std::cout << "A bullet has been deleted\n";
+			//	//do nothing
+			//}
+			//else 
+			//{
+			//	std::cout << "A player has died\n";
+			//}
+			
 			RakNet::BitStream bsIn(packet->data, packet->length, false);
 			bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
 			int deadID = -1;
