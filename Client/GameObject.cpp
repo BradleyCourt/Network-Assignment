@@ -90,11 +90,11 @@ void GameObject::updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client*
 	if (currentHealth != health)
 	{
 		//currentHealth = health;
-		std::cout << (currentHealth) << std::endl;
+		//std::cout << (currentHealth) << std::endl;
 	}
 	if (currentHealth <= 0 && !dead)
 	{
-	if (!isBullet())
+		if (!isBullet())
 		{
 			//std::cout << "you are very dead" << std::endl;
 			dead = true;
@@ -106,15 +106,7 @@ void GameObject::updateHealth(RakNet::RakPeerInterface * pPeerInterface, Client*
 			bs.Write(m_myClientID);
 			pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
 		}
-		else if(isBullet())//todo
-		{
-			currentHealth -= 10;
-			std::cout << m_myClientID << "	I TOOK DAMAGE	" << std::endl;
-		}
-	
 	}
-
-
 }
 
 void GameObject::Fire()
@@ -143,7 +135,7 @@ bool GameObject::updateTranforms(float deltaTime, Client* client)
 		{
 			position.x += 5.0f * deltaTime;
 			snapToBounds(this->position);
-		//	currentHealth--;
+			currentHealth--;
 			changed = true;
 		}
 
@@ -310,9 +302,10 @@ void GameObject::Read(RakNet::Packet * packet) // send
 	bsIn.Read((char*)&health, sizeof(int));
 	bsIn.Read((char*)&currentHealth, sizeof(int));
 
-	std::cout << "Obj#" << m_myClientID << " HP= " << currentHealth << std::endl;
+	//std::cout << "Obj#" << m_myClientID << " HP= " << currentHealth << std::endl;
 	// set the dead state based on health?
 	dead = (currentHealth <= 0);
+	Report("READ");
 }
 
 void GameObject::Write(RakNet::RakPeerInterface * pPeerInterface, const RakNet::SystemAddress & address, bool broadcast) //recieve
@@ -327,6 +320,7 @@ void GameObject::Write(RakNet::RakPeerInterface * pPeerInterface, const RakNet::
 	bs.Write((char*)&health, sizeof(int));
 	bs.Write((char*)&currentHealth, sizeof(int));
 	pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, address, broadcast);
+	Report("WRITE");
 }
 
 #ifndef NETWORK_SERVER

@@ -198,6 +198,10 @@ void Client::onReceivedClientDataPacket(RakNet::Packet * packet)
 		//std::cout << "Client" << clientID << " at : " << clientData.position.x << " " << clientData.position.z << std::endl;
 
 	}
+	else
+	{
+	//	m_myGameObject.Read(packet);
+	}
 }
 
 void Client::handleNetworkMessages()

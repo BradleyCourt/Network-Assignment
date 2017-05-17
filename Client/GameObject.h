@@ -4,6 +4,7 @@
 #include <BitStream.h>
 #include "GameMessages.h"
 #include <list>
+#include <iostream>
 #include <unordered_map>
 
 
@@ -64,6 +65,11 @@ public:
 	float radius = 1.0f;
 
 	void Draw();
+
+	void Report(const char* msg)
+	{
+		std::cout << msg << " Obj#" << m_myClientID << " has HP:" << currentHealth << "(" << dead << ")" << std::endl;
+	}
 };
 
 

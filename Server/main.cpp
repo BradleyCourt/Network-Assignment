@@ -64,7 +64,7 @@ void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
 			//}
 		}
 
-		// Check collisions
+		// Check collisions - TODO - how do we not do each collision twice?
 		for (auto& object : m_gameObjects)
 		{
 			for (auto& other : m_gameObjects)
@@ -100,6 +100,8 @@ void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
 						sendClientDeath(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, object1.m_myClientID);
 						object2.currentHealth -= 100;
 						object2.Write(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+						object2.Report("COL");
+
 
 					}
 					else
@@ -107,6 +109,7 @@ void updateObjects(RakNet::RakPeerInterface* pPeerInterface)
 						sendClientDeath(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, object2.m_myClientID);
 						object1.currentHealth -= 100;
 						object1.Write(pPeerInterface, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+						object1.Report("COL");
 					}
 					
 				}
